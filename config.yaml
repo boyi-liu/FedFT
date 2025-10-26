@@ -1,17 +1,18 @@
 # basic config
 alg: fedit
 suffix: default
-device: 1
+device: 3
 dataset: gsm8k
-model: qwen
+model: qwen2.5-0.5b
 
 # federated config
-cn: 1
+cn: 2
 sr: 1
 rnd: 10
 tg: 10
 
 # local training config
-bs: 2
+bs: 4
+grad_accum: 8
 epoch: 5
-lr: 1e-5
+lr: 2e-4

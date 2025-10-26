@@ -1,4 +1,4 @@
-from alg.fedft.ftbase import FTBaseClient, FTBaseServer
+from alg.ftbase import FTBaseClient, FTBaseServer
 from utils.time_utils import time_record
 
 class Client(FTBaseClient):

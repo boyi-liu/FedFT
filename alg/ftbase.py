@@ -1,5 +1,6 @@
 import copy
 import os
+import math
 
 from transformers import TrainingArguments, Trainer
 from alg.base import BaseClient, BaseServer
@@ -12,12 +13,12 @@ class FTBaseClient(BaseClient):
         super().__init__(id, args)
         _, self.tokenizer = load_model(args)
         self.training_args = TrainingArguments(
-            output_dir=f"./client{self.id}_lora-alpaca",
-            per_device_train_batch_size=2,
-            gradient_accumulation_steps=8,
-            learning_rate=2e-4,
-            num_train_epochs=1,
-            logging_steps=10,
+            output_dir=f"./client{self.id}",  # where to save the output log
+            per_device_train_batch_size=args.bs,
+            gradient_accumulation_steps=args.grad_accum,
+            learning_rate=args.lr,
+            num_train_epochs=args.epoch,
+            logging_steps=10,  # gap of steps between two logging
             save_steps=500,
             save_total_limit=2,
             fp16=True,
@@ -42,6 +43,7 @@ class FTBaseClient(BaseClient):
 
     def run(self, model):
         client_model = copy.deepcopy(model)
+        client_model.train()
 
         Trainer(
             model=client_model,
@@ -49,18 +51,24 @@ class FTBaseClient(BaseClient):
             train_dataset=self.dataset['train'],
             processing_class=self.tokenizer,
         ).train()
+
         return {k: v for k, v in client_model.state_dict().items() if "lora_" in k}
 
     def local_test(self, model):
-        client_model = copy.deepcopy(model)
+        model.eval()
 
         trainer = Trainer(
-            model=client_model,
+            model=model,
             args=self.training_args,
             eval_dataset=self.dataset["test"],
             processing_class=self.tokenizer
         )
         metrics = trainer.evaluate()
+        if "eval_loss" in metrics and metrics["eval_loss"] is not None and not math.isnan(metrics["eval_loss"]):
+            metrics["perplexity"] = float(math.exp(metrics["eval_loss"]))
+        else:
+            metrics["perplexity"] = float("inf")
+
         print(f"Client {self.id} local test metrics:", metrics)
         return metrics
 
@@ -103,6 +111,7 @@ class FTBaseServer(BaseServer):
             metrics = client.local_test(self.model)
             all_metrics.append(metrics)
 
-        if all_metrics and "eval_loss" in all_metrics[0]:
-            avg_loss = sum(m["eval_loss"] for m in all_metrics) / len(all_metrics)
-            print(f"\n[Server] 平均 eval_loss: {avg_loss:.4f}")
+
+        avg_loss = sum(m["eval_loss"] for m in all_metrics) / len(all_metrics)
+        avg_perplexity = sum(m["perplexity"] for m in all_metrics) / len(all_metrics)
+        return {'loss': avg_loss, 'perplexity': avg_perplexity}

@@ -1,13 +1,17 @@
 import torch
+import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model, TaskType, PeftModel
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def load_model(args):
     model_name = args.model
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        device_map="auto",
+        device_map="auto",  # auto / cuda:0 / cpu ...
         torch_dtype=torch.float16
     )
 

@@ -22,7 +22,8 @@ class Config:
     tg: int = 1
 
     ### local training setting
-    bs: int = 64 # batch size
+    bs: int = 2  # batch size
+    grad_accum: int = 8  # gradient accumulate
     epoch: int = 5
     lr: float = 1e-5
 
@@ -45,10 +46,7 @@ def args_parser():
     args, _ = parser.parse_known_args()
 
     # === read specific args from each method
-    if importlib.util.find_spec(f'alg.fedft.{args.alg}'):
-        alg_module = importlib.import_module(f'alg.fedft.{args.alg}')
-    else:
-        alg_module = importlib.import_module(f'alg.fedrag.{args.alg}')
+    alg_module = importlib.import_module(f'alg.{args.alg}')
 
     spec_args = alg_module.add_args(parser) if hasattr(alg_module, 'add_args') else args
     return spec_args

@@ -1,7 +1,7 @@
 import json
 import yaml
 
-from dataset.utils import split_dataset
+from utils import split_dataset
 
 if __name__ == "__main__":
     with open('config.yaml', 'r') as f:
