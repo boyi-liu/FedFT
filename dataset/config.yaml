@@ -1,12 +1,3 @@
 client_num: 10
 dir_path: gsm8k
-split: uniform  # even/dir/...
-seed: 42
-
-type: ft  # ft/rag/prag
-
-rag:
-  samples: 3
-  topk: 5
-  augment_model: "llama3.2-1b-instruct"
-  augment_model_path: "/home/liangzhilin/model/llama3.2-1b-instruct"
+split: uniform  # uniform/dir/...
