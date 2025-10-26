@@ -19,12 +19,13 @@ class FTBaseClient(BaseClient):
             learning_rate=args.lr,
             num_train_epochs=args.epoch,
             logging_steps=10,  # gap of steps between two logging
-            save_steps=500,
+            save_steps=50000,
             save_total_limit=2,
             fp16=True,
             optim="adamw_torch"
         )
         self.load_data()
+        self.lora = {}
 
     def load_data(self):
         train_dir = os.path.join('./dataset', self.args.dataset, f'train/{self.id}.json')
@@ -52,7 +53,7 @@ class FTBaseClient(BaseClient):
             processing_class=self.tokenizer,
         ).train()
 
-        return {k: v for k, v in client_model.state_dict().items() if "lora_" in k}
+        self.lora = {k: v for k, v in client_model.state_dict().items() if "lora_" in k}
 
     def local_test(self, model):
         model.eval()
@@ -89,19 +90,19 @@ class FTBaseServer(BaseServer):
         pass
 
     def local_run(self):
-        self.client_models = [client.run(self.model) for client in self.clients]
+        for client in self.clients: client.run(self.model)
 
     def aggregate(self):
+        data_sum = sum([len(client.dataset['train']) for client in self.clients])
         from collections import defaultdict
         aggregated = defaultdict(lambda: 0)
-        n = len(self.client_models)
 
-        for model in self.client_models:
+        for client in self.clients:
+            model = client.lora
             for k, v in model.items():
-                aggregated[k] = aggregated[k] + v
+                aggregated[k] = aggregated[k] + v * len(client.dataset['train']) / data_sum
 
-        aggregated_state_dict = {k: v / n for k, v in aggregated.items()}
-        self.model.load_state_dict(aggregated_state_dict, strict=False)
+        self.model.load_state_dict(aggregated, strict=False)
         print("Aggregated model updated.")
 
     def test_all(self):

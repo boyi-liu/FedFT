@@ -3,7 +3,7 @@ alg: fedit
 suffix: default
 device: 3
 dataset: gsm8k
-model: qwen2.5-0.5b
+model: qwen
 
 # federated config
 cn: 2
@@ -14,5 +14,5 @@ tg: 10
 # local training config
 bs: 4
 grad_accum: 8
-epoch: 5
+epoch: 1
 lr: 2e-4

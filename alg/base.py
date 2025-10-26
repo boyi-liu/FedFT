@@ -4,9 +4,8 @@ class BaseClient(ABC):
     def __init__(self, id, args):
         self.id = id
         self.args = args
-        self.dataset_train = None
-        self.dataset_test = None
         self.server = None
+        self.dataset = None
 
     @abstractmethod
     def load_data(self):
